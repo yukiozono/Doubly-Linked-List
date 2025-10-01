@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <fstream>
-
 /**
  * @class DoublyLinkedList
  * @brief 指定したファイルを取り込める双方向リスト
@@ -61,10 +60,27 @@ public:
 		return outputLine;
 	}
 
-	//list消去時全クリア
+	/**
+	 * @brief デフォルトコンストラクタ。
+	 */
+	DoublyLinkedList() = default;
+
+	/**
+	 * @brief デストラクタでリストの内容物全消去
+	 */
 	~DoublyLinkedList() {
 		clear(); 
 	}
+
+	/**
+	 * @brief コピーコンストラクタを削除。
+	 */
+	DoublyLinkedList(const DoublyLinkedList&) = delete;
+
+	/**
+	 * @brief コピー代入演算子を削除。
+	 */
+	DoublyLinkedList& operator=(const DoublyLinkedList&) = delete;
 
 private:
 	struct Node {
