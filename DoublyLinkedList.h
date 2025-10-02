@@ -11,6 +11,58 @@
  */
 class DoublyLinkedList {
 public:
+
+	struct ScoreData {
+		int            score = 0;
+		std::string    userName = {};
+	};
+
+	struct Node {
+		Node* prevNode = nullptr;    //一つ前のノードのポインタ
+		Node* nextNode = nullptr;    //一つ後のノードのポインタ
+		ScoreData data = {};
+	};
+
+
+	Node* head = nullptr;  //先頭アドレス
+	Node* tail = nullptr;  //末尾アドレス
+	unsigned short listSize = 0;  //現在のリストのサイズ
+
+	class iterator {
+		//DoublyLinkedListからアクセスするための宣言
+		friend class DoublyLinkedList;
+
+	protected:
+		Node* node = nullptr;
+
+		//コンストラクタ(initの値で初期化)
+		explicit iterator(Node* init) : node(init) {}
+
+	public:
+		//初期値はdefaultのnullptrにお任せ
+		iterator() = default;
+
+		//ScoreDataにアクセスするための間接参照
+		ScoreData& operator*() { return node->data; }
+
+	};
+
+	class const_iterator : public iterator {
+		//DoublyLinkedListからアクセスするための宣言
+		friend class DoublyLinkedList;
+
+		//コンストラクタ(initの値で初期化)
+		explicit const_iterator(Node* init) : iterator(init) {}
+
+	public:
+		//デフォルトコンストラクタ(iterator()呼出時、nodeをnullptrに)
+		const_iterator() : iterator() {}
+
+		//コピーコンストラクタ自動生成(iteratorの位置ポインタをコピー)
+		const_iterator(const const_iterator&) = default;
+		
+	};
+
 	/**
 	 * @brief ファイル読み込み
 	 * @param ファイルパス
@@ -49,7 +101,7 @@ public:
 		//currentがnullptrになるまでループ
 		while (current != nullptr) {
 			//文字列を追加し、改行
-			outputLine += current->line;
+			outputLine += current->data;
 			outputLine += '\n';
 
 			//次のノードへ
@@ -83,16 +135,8 @@ public:
 	DoublyLinkedList& operator=(const DoublyLinkedList&) = delete;
 
 private:
-	struct Node {
-		std::string line = {};  //ノード内の内容
-		Node* prevNode = nullptr;    //一つ前のノードのポインタ
-		Node* nextNode = nullptr;    //一つ後のノードのポインタ
-	};
-
-	Node* head = nullptr;  //先頭アドレス
-	Node* tail = nullptr;  //末尾アドレス
-	unsigned short listSize = 0;  //現在のリストのサイズ
-
+	
+	
 	/**
 	 * @brief ノード追加
 	 * @param previous 挿入先のノード
@@ -136,7 +180,7 @@ private:
 	 */
 	void pushback(const std::string& newLine) {
 		Node* node = new Node;
-		node->line = newLine;
+		node->data = newLine;
 		addNode(tail, node);
 	}
 
