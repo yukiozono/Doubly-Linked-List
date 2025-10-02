@@ -1,6 +1,12 @@
 #pragma once
 #include <string>
 #include <fstream>
+
+struct ScoreData {
+	int            score = 0;
+	std::string    userName = {};
+};
+
 /**
  * @class DoublyLinkedList
  * @brief 指定したファイルを取り込める双方向リスト
@@ -10,23 +16,21 @@
  * 再度同順に出力できます
  */
 class DoublyLinkedList {
-public:
-
-	struct ScoreData {
-		int            score = 0;
-		std::string    userName = {};
-	};
-
+private:
 	struct Node {
 		Node* prevNode = nullptr;    //一つ前のノードのポインタ
 		Node* nextNode = nullptr;    //一つ後のノードのポインタ
 		ScoreData data = {};
 	};
 
-
+	//ノードへのポインタ
 	Node* head = nullptr;  //先頭アドレス
 	Node* tail = nullptr;  //末尾アドレス
-	unsigned short listSize = 0;  //現在のリストのサイズ
+	size_t listSize = 0;   //現在のリストのサイズ
+
+	
+
+public:
 
 	class iterator {
 		//DoublyLinkedListからアクセスするための宣言
@@ -89,6 +93,109 @@ public:
 		const_iterator(const iterator& it) : iterator(it.node) {}
 	};
 
+public:
+	//データ数の取得
+	size_t size() const { return listSize; }
+
+	/**
+	 * @brief          ノード追加
+	 * @param previous 挿入先のノードの位置
+	 * @param datas    追加するデータ
+	 * @return         追加したノードの位置
+	 */
+	iterator addNode(const const_iterator& nodePos, const ScoreData& datas) {
+		//新規ノードにデータを代入
+		Node* current = new Node{ nullptr, nullptr, datas };
+
+		//もしリストが空であった場合
+		if (listSize == 0) {
+			//先頭と末尾アドレスにcurrentを代入
+			head = tail = current;
+		}
+		//もしpreviousが末尾のノードだった場合		
+		else if (nodePos.node == nullptr) {
+			//currentを追加し、末尾アドレスにcurrentを代入
+			current->prevNode = tail;
+			tail->nextNode = current;
+			tail = current;
+		}
+		
+		//もし挿入先が先頭であった場合
+		else if (nodePos.node == head) {
+			//currentを先頭にし、headの位置を交代
+			current->nextNode = head;
+			head->prevNode = current;
+			head = current;
+		}
+		//もしどちらでもない途中からの挿入だった場合
+		else {
+			//previousのノードとcurrentの前後のアドレスを再編成
+			Node* prev = nodePos.node->prevNode;
+			current->prevNode = prev;
+			current->nextNode = nodePos.node;
+			prev->nextNode = current;
+
+			//次のノードの前要素アドレスにcurrentを代入
+			nodePos.node->prevNode = current;
+		}
+
+		//リストサイズを管理する変数を+1
+		++listSize;
+
+		return iterator(current);
+	}
+
+
+	/**
+	 * @brief          ノード削除
+	 * @param previous 削除するノードの位置
+	 * @return         次のノードの位置
+	 */
+	iterator deleteNode(const iterator& nodePos) {
+		Node* current = nodePos.node;
+
+		//見つからなかった場合は、nullptrをreturn
+		if (!current) return iterator(nullptr);
+
+		Node* next = current->nextNode;
+
+		//ノードの前後のポインタを再編成
+		if (current->prevNode) {
+			current->prevNode->nextNode = current->nextNode;
+		}
+		else {
+			head = current->nextNode;
+		}
+
+		if (current->nextNode) {
+			current->nextNode->prevNode = current->prevNode;
+		}
+		else {
+			tail = current->prevNode;
+		}
+
+		//currentを削除し、リストサイズも減らす
+		delete current;
+		--listSize;
+		return iterator(next);
+	}
+
+	/**
+	 * @brief リスト内の要素先頭から全消去
+	 */
+	void clear() {
+		Node* current = head;
+		//currentがnullptrになるまでループし、ノードを削除
+		while (current != nullptr) {
+			Node* next = current->nextNode;
+			delete current;
+			current = next;
+		}
+		head = nullptr;
+		tail = nullptr;
+		listSize = 0;
+	}
+
 	/**
 	 * @brief ファイル読み込み
 	 * @param ファイルパス
@@ -109,7 +216,39 @@ public:
 
 		//一行ずつListに追加
 		while (std::getline(file, line)) {
-			pushback(line);
+			if (line.empty()) continue;  //もし空だった場合、続行
+
+
+			//文字列とデータの処理
+			ScoreData data = {};
+			//最初のタブキー入力の位置を検索
+			std::size_t tab = line.find('\t');
+
+			//タブを検出した場合、それまでの文字列をスコアにし、
+			if (tab != std::string::npos) {
+				std::string s_score = line.substr(0, tab);
+
+				//残りをプレイヤー名に
+				std::string name = line.substr(tab + 1);
+
+				//数字の文字列だった場合、intに変換
+				try {
+					data.score = std::stoi(s_score);
+				}
+				catch (...) {
+					// 数値でない場合はスキップ
+					continue;
+				}
+				data.userName = name;
+			}
+			else {
+				//タブがなかった場合、スコアを0にし、名前のみ代入
+				data.score = 0;
+				data.userName = line;
+			}
+
+			// 末尾にノードを追加
+			addNode(const_iterator(nullptr), data);
 		}
 
 		//ファイルを閉じる
@@ -127,8 +266,10 @@ public:
 		//currentがnullptrになるまでループ
 		while (current != nullptr) {
 			//文字列を追加し、改行
-			outputLine += current->data;
-			outputLine += '\n';
+			outputLine += std::to_string(current->data.score);  //スコアを文字列に変換し、
+			outputLine += '\t';   //タブを追加
+			outputLine += current->data.userName;  //名前を追加し
+			outputLine += '\n';   //改行
 
 			//次のノードへ
 			current = current->nextNode;
@@ -159,70 +300,4 @@ public:
 	 * @brief コピー代入演算子を削除。
 	 */
 	DoublyLinkedList& operator=(const DoublyLinkedList&) = delete;
-
-private:
-	
-	
-	/**
-	 * @brief ノード追加
-	 * @param previous 挿入先のノード
-	 * @param current  挿入するノード
-	 */
-	void addNode(Node* previous, Node* current) {
-		
-		//もしリストが空であった場合
-		if (listSize == 0) {
-			//先頭と末尾アドレスにcurrentを代入
-			head = current;
-			tail = current;
-			current->prevNode = current->nextNode = nullptr;
-		}
-		//もしpreviousの次のノードが末尾のノードではなかった場合(途中からの挿入の場合)
-		else if (previous != tail) {
-			//previousのノードとcurrentの前後のアドレスを再編成
-			current->nextNode = previous->nextNode;
-			previous->nextNode = current;
-			current->prevNode = previous;
-			
-			//次のノードの前要素アドレスにcurrentを代入
-			current->nextNode->prevNode = current;
-		}
-		//もしpreviousが末尾のノードだった場合
-		else if (previous == tail) {
-			//currentを追加し、末尾アドレスにcurrentを代入
-			previous->nextNode = current;
-			current->prevNode = previous;
-			current->nextNode = nullptr;
-			tail = current;
-		}		
-
-		//リストサイズを管理する変数を+1
-		listSize++;
-	}
-
-	/**
-	 * @brief リストに要素追加
-	 * @param newLine 追加する文字列
-	 */
-	void pushback(const std::string& newLine) {
-		Node* node = new Node;
-		node->data = newLine;
-		addNode(tail, node);
-	}
-
-	/**
-	 * @brief リスト内の要素先頭から全消去
-	 */
-	void clear() {
-		Node* current = head;
-		//currentがnullptrになるまでループし、ノードを削除
-		while (current != nullptr) {
-			Node* next = current->nextNode;
-			delete current;
-			current = next;
-		}
-		head = nullptr;
-		tail = nullptr;
-		listSize = 0;
-	}
 };
