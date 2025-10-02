@@ -58,9 +58,35 @@ public:
 		//デフォルトコンストラクタ(iterator()呼出時、nodeをnullptrに)
 		const_iterator() : iterator() {}
 
-		//コピーコンストラクタ自動生成(iteratorの位置ポインタをコピー)
+		//前置デクリメント用(it--)(リストの先頭に向かって一つ進める[operator--]())
+		const_iterator& operator--() { if (this->node) this->node = this->node->prevNode; return *this; }
+
+		//後置デクリメント用(--it)(リストの先頭に向かって一つ進める[operator--]())
+		const_iterator  operator--(int) { const_iterator t = *this; --(*this); return t; }
+
+		//前置インクリメント用(it++)(リストの末尾に向かって一つ進める[operator++]())
+		const_iterator& operator++() { if (this->node) this->node = this->node->nextNode; return *this; }
+
+		//後置インクリメント用(++it)(リストの末尾に向かって一つ進める[operator++]())
+		const_iterator  operator++(int) { const_iterator t = *this; ++(*this); return t; }
+
+		//間接参照(戻り値 const ScoreData&)（イテレータの指す要素を取得する[operator* const版]())
+		const ScoreData& operator*() const { return this->node->data; }
+
+		//コピーコンストラクタ自動生成(iteratorの位置ポインタをコピー)(コピーを行う[コピーコンストラクタ]())
 		const_iterator(const const_iterator&) = default;
+
+		//コピーコンストラクタ自動生成(iteratorの位置ポインタを上書き)(代入を行う[operator=]())
+		const_iterator& operator=(const const_iterator&) = default;
 		
+		//等値比較(==であればtrueを返す)(同一か比較する[operator==]())
+		bool operator==(const const_iterator& r) const { return this->node == r.node; }
+
+		//非等値比較(!=であればtrueを返す)(異なるかか比較する[operator!=]()
+		bool operator!=(const const_iterator& r) const { return this->node != r.node; }
+
+		//iteratorからconst_iteratorへ変換
+		const_iterator(const iterator& it) : iterator(it.node) {}
 	};
 
 	/**
