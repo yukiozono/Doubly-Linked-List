@@ -91,7 +91,7 @@ private:
 
 	Node* head = nullptr;  //先頭アドレス
 	Node* tail = nullptr;  //末尾アドレス
-	unsigned long long listSize = 0;  //現在のリストのサイズ
+	size_t listSize = 0;  //現在のリストのサイズ
 
 	/**
 	 * @brief ノード追加
